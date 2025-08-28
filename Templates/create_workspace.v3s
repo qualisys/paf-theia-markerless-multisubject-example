@@ -1,0 +1,299 @@
+<?
+include_once ($template_directory . 'prepare_variables.php');
+?> 
+
+File_New
+;
+
+! Use filtered data for link model based and force signals
+Set_Use_Processed_Analog
+/USE_PROCESSED=TRUE
+;
+
+Set_Use_Processed_Targets
+/USE_PROCESSED=TRUE
+! /RECALC=TRUE
+;
+
+Set_Pipeline_Parameter
+/PARAMETER_NAME=working_directory
+/PARAMETER_VALUE=<?=$working_directory;?> 
+! /PARAMETER_VALUE_SEARCH_FOR=
+! /PARAMETER_VALUE_REPLACE_WITH=
+! /PARAMETER_VALUE_PREFIX=
+! /PARAMETER_VALUE_APPEND=
+! /MULTI_PASS=FALSE
+;
+
+Set_Pipeline_Parameter
+/PARAMETER_NAME=template_directory
+/PARAMETER_VALUE=<?=$template_directory;?> 
+! /PARAMETER_VALUE_SEARCH_FOR=
+! /PARAMETER_VALUE_REPLACE_WITH=
+! /PARAMETER_VALUE_PREFIX=
+! /PARAMETER_VALUE_APPEND=
+! /MULTI_PASS=FALSE
+;
+
+!=============================
+!Open files
+!=============================
+Manage_File_Merge
+/ROOT_FOLDER=<?=$working_directory;?>TheiaFormatData\
+! /HMX_INDEX_MASK=
+! /USE_HMX_INDEX=FALSE
+! /ACTION=
+! /TAGS=ACTION
+! /IMPORT_ANALOG_FILES=FALSE
+/MERGE_PRIMARY_FILES=TRUE
+! /MERGE_PRIMARY_AND_OTHER_FILES=FALSE
+! /MERGE_EVENT_LABELS=FALSE
+/PRIMARY_SESSION_FOLDER=*TheiaFormatData
+/PRIMARY_FILE_MASK=*0.c3d
+! /PRIMARY_FILE_MAS_FOR_MODEL=
+/THEIA3D_PREFIX=SUBJECT0:
+/THEIA3D_SUBJECT_TAG=SUBJECT0
+/PRIMARY_COLOR=Black
+! /PRIMARY_SEX=UNKNOWN
+! /CREATE_MODEL_FOR_EACH_C3D_FILE=FALSE
+/OTHER_SESSION_FOLDER=*TheiaFormatData
+/OTHER_FILE_MASK=*.c3d
+! /OTHER_MODEL_MASK=
+! /OTHER_MODEL_TEMPLATE_MASK=
+/OTHER_PREFIX=SUBJECT1:
+/OTHER_SUBJECT_TAG=SUBJECT1
+/OTHER_COLOR=Black
+! /NUMBER_OF_SESSION_FILES_ALLOWED=
+/SAVE_DEFAULT_CMZ_FILES=FALSE
+! /DEFAULT_CMZ_NAME=<SESSION>
+! /OPEN_CMZ_LIBRARY=FALSE
+! /VIRTUAL_LAB=
+/INPUT_DATA_FOLDER_PRIMARY=ACTION
+/INPUT_DATA_FOLDER_SECONDARY=ACTION
+/INPUT_STATIC_DATA_FOLDER=TRIAL
+! /KINETIC_THORAX=RTA
+! /ANALOG_FILTER_CUTOFF=12
+! /TARGET_FILTER_CUTOFF=12
+/FP_AUTO_BASELINE=Do_Not_Compute
+! /VISUAL3D_PIPELINE_POST_MERGE=
+! /VISUAL3D_PIPELINE_PREMERGE=
+;
+
+! Add tags
+Assign_Tags_To_Files
+/MOTION_FILE_NAMES=*Dynamic*
+! /QUERY=
+/TAGS=Dynamic
+;
+
+Set_Subject_Tag
+/CALIBRATION_FILE=*SUBJECT0*
+/SUBJECT_PREFIX=SUBJECT0:
+/SUBJECT_TAGS=SUBJECT0
+! /REMOVE_EXISTING_TAGS=FALSE
+;
+
+Set_Subject_Tag
+/CALIBRATION_FILE=*SUBJECT1*
+/SUBJECT_PREFIX=SUBJECT1:
+/SUBJECT_TAGS=SUBJECT1
+! /REMOVE_EXISTING_TAGS=FALSE
+;
+
+Select_Active_File
+/FILE_NAME=*Dynamic 1*
+! /QUERY=
+/SUBJECT_TAGS=SUBJECT0
+;
+
+Set_Subject_Mass
+/CALIBRATION_FILE=*SUBJECT0*
+! /PROMPT=
+! /PROMPT_SIZE=90
+/WEIGHT=<?=$session["Weight"]?> 
+! /UNITS=Kg
+;
+
+Set_Subject_Height
+/CALIBRATION_FILE=*SUBJECT0*
+! /PROMPT=
+! /PROMPT_SIZE=90
+/HEIGHT=<?=$subject["Height"]?> 
+! /UNITS=m
+;
+
+Append_Model_Template
+/CALIBRATION_FILE=*SUBJECT0*
+/SUBJECT_PREFIX=SUBJECT0:
+/MODEL_TEMPLATE=<?=$template_directory;?>append_model.mdh
+! /VIEW_BUILDMODEL_RESULTS=2
+;
+
+Select_Active_File
+/FILE_NAME=*Dynamic 2*
+! /QUERY=
+/SUBJECT_TAGS=SUBJECT1
+;
+
+Set_Subject_Mass
+/CALIBRATION_FILE=*SUBJECT1*
+! /PROMPT=
+! /PROMPT_SIZE=90
+/WEIGHT=<?=$session["Weight"]?> 
+! /UNITS=Kg
+;
+
+Set_Subject_Height
+/CALIBRATION_FILE=*SUBJECT1*
+! /PROMPT=
+! /PROMPT_SIZE=90
+/HEIGHT=<?=$subject["Height"]?> 
+! /UNITS=m
+;
+
+Append_Model_Template
+/CALIBRATION_FILE=*SUBJECT1*
+/SUBJECT_PREFIX=SUBJECT1:
+/MODEL_TEMPLATE=<?=$template_directory;?>append_model.mdh
+! /VIEW_BUILDMODEL_RESULTS=2
+;
+
+Build_Model
+! /CALIBRATION_FILE=
+/REBUILD_ALL_MODELS=TRUE
+! /DISPLAY_RESULTS=TRUE
+;
+
+Select_Active_File
+/FILE_NAME=ALL_FILES
+! /QUERY=
+/SUBJECT_TAGS=ALL_SUBJECTS
+;
+
+!===========================================
+!Define virtual lab orientation based on pelvis orientation
+!===========================================
+
+! Add TARGET Lab orientation (used to set orientation of Virtual lab)
+! ==================================
+
+! A unit vector is defined between the right and left hip landmarks, then rounded to yield 4 possible solutions ( +/- X-axis and +/- y-axis)
+! A target is created that contains that unit_vector at every frame of data.
+! The virtual_lab will be tracked by the new TARGET.
+
+! Note this algorithm will NOT work properly if pelvis rotates along vertical axis during dynamic trials
+! Note LHIP and RHIP landmarks must exist to apply this algorithm.
+
+! Create a unit vector between left and right hips
+Evaluate_Expression
+/EXPRESSION=UNIT_VECTOR(
+	(LANDMARK::ORIGINAL::RHIP::X - LANDMARK::ORIGINAL::LHIP::X), 
+	(LANDMARK::ORIGINAL::RHIP::Y - LANDMARK::ORIGINAL::LHIP::Y), 
+	(LANDMARK::ORIGINAL::RHIP::Z - LANDMARK::ORIGINAL::LHIP::Z)) 
+! /SIGNAL_TYPES= 
+! /SIGNAL_FOLDER=ORIGINAL 
+! /SIGNAL_NAMES= 
+/RESULT_TYPES=DERIVED 
+/RESULT_FOLDERS=VIRTUAL_LAB 
+/RESULT_NAME=HIP_VECTOR 
+! /APPLY_AS_SUFFIX_TO_SIGNAL_NAME=FALSE 
+; 
+
+! Compute the median value of the unit vector
+Metric_Median
+/RESULT_METRIC_FOLDER=VIRTUAL_LAB
+/RESULT_METRIC_NAME=_MED
+/APPLY_AS_SUFFIX_TO_SIGNAL_NAME=TRUE
+/SIGNAL_TYPES=DERIVED
+/SIGNAL_FOLDER=VIRTUAL_LAB
+/SIGNAL_NAMES=HIP_VECTOR
+/COMPONENT_SEQUENCE=ALL
+/EVENT_SEQUENCE=
+/EXCLUDE_EVENTS=
+/SEQUENCE_PERCENT_START=
+/SEQUENCE_PERCENT_END=
+/GENERATE_MEAN_AND_STDDEV=FALSE
+! /APPEND_TO_EXISTING_VALUES=FALSE
+;
+
+! Round the floats to an integer 
+Evaluate_Expression 
+/EXPRESSION=ROUND(METRIC::VIRTUAL_LAB::HIP_VECTOR_MED) 
+! /SIGNAL_TYPES= 
+! /SIGNAL_FOLDER=ORIGINAL 
+! /SIGNAL_NAMES= 
+/RESULT_TYPES=METRIC 
+/RESULT_FOLDERS=VIRTUAL_LAB 
+/RESULT_NAME=LAB_LATERAL 
+! /APPLY_AS_SUFFIX_TO_SIGNAL_NAME=FALSE 
+; 
+
+! Create a new TARGET that has the rounded unit vector at every frame. 
+Create_Target 
+/SIGNAL_NAMES=Lab orientation
+! /SIGNAL_DESCRIPTION= 
+/EXPRESSION=METRIC::VIRTUAL_LAB::LAB_LATERAL 
+; 
+
+! End of virtual lab definition 
+! =========================================
+
+Open_Report_Template
+/REPORT_TEMPLATE=<?=$template_directory;?>report.rgt
+! /SET_PROMPT=Open report template
+;
+
+<?
+include_once ($template_directory . 'add_meta_data_to_report.v3s');
+?> 
+
+Call_Script
+/SCRIPT_FILE_NAME=<?=$template_directory . 'processing.v3s'; ?> 
+! /SCRIPT_PATH=
+;
+
+Recalc
+;
+
+!====================================================
+! Export LINK_MODEL_BASED signals to .xml
+!====================================================
+
+Export_Data_To_Ascii_File
+/FILE_NAME=<?=$working_directory;?>session_data.xml
+/SIGNAL_TYPES=LINK_MODEL_BASED
+! /SIGNAL_FOLDER=ORIGINAL
+! /SIGNAL_NAMES=
+! /SIGNAL_COMPONENTS=
+! /COMPONENT_SEQUENCE=
+! /SIGNAL_PRECISION=
+! /EVENT_SEQUENCE=
+! /EXCLUDE_EVENTS=
+! /USE_POINT_RATE=FALSE
+! /NORMALIZE_DATA=FALSE
+! /NORMALIZE_POINTS=101
+! /EXPORT_MEAN_AND_STD_DEV=FALSE
+! /EXPORT_MEAN_AND_STD_DEV_FOR_METRIC=FALSE
+! /USE_P2D_FORMAT=FALSE
+/USE_XML_FORMAT=TRUE
+! /USE_JSON_FORMAT=FALSE
+! /USE_SHORT_FILENAME=FALSE
+! /INCLUDE_TAGS_FOR_XML=FALSE
+! /EXPORT_EMPTY_SIGNALS=FALSE
+! /EXPORT_WITHOUT_HEADER=FALSE
+! /EXPORT_NAN=FALSE
+! /CREATE_FOLDER_PATH=TRUE
+! /USE_SCIENTIFIC_NOTATION=FALSE
+;
+
+!====================================================
+!Save cmz
+!====================================================
+
+File_Save_As
+/FILE_NAME=<?=$working_directory;?>Report.cmz
+! /FOLDER=
+! /SET_PROMPT=Save CMZ file as
+! /SAVE_EMBEDDED_GRAPHICS=FALSE
+! /CREATE_FOLDER_PATH=FALSE
+;

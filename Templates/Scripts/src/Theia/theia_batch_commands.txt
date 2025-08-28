@@ -1,0 +1,12 @@
+STATE::IDLE
+DIR::D:\Data\Qualisys\PAF\Open PAF Multisubject markerless\Data\Two subjects squat_01\2025-08-08_Markerless\TheiaFormatData
+USE_ROOT::TRUE
+WORKSPACE::FALSE
+RUNANALYSIS::TRUE
+SAVEINFERENCE::FALSE
+SAVEVIDEO::FALSE
+SAVEPOSE::TRUE
+SAVEWORK::FALSE
+SAVEFBX::FALSE
+FBXCOORDSYS::THEIA3D
+PREF_PATH::D:\Data\Qualisys\PAF\Open PAF Multisubject markerless\Templates\Scripts\src\Theia\theia_preferences.pxt

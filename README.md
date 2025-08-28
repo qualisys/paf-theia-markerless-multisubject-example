@@ -26,7 +26,7 @@ There are two ways how to set up the project for QTM:
 3. Install Visual3D.
 4. Set Project Options > Miscellaneous > Folder Options for "Visual3D" to ```C:\Program Files\Visual3D x64\Visual3D.exe``` (adapt if Visual3D is installed at different location).
 5. Download data from Qualisys File Library (https://qfl.qualisys.com/#!/project/theiaexample).
-   Example data includes three types of data:
+   Example data includes four types of data:
    1. **John Doe** can be used with basic example (https://github.com/qualisys/paf-theia-markerless-example).
    2. **Jim Doe** is intended for comparison example (https://github.com/qualisys/paf-theia-markerless-comparison-example). It does not include videos and can be used to compare marker-based and markerless data. This sesson type expects data to be captured by combined system of video cameras and marker-based cameras where markers are places on the body for the same trial that is used to capture videos. Script is set to work with sports marker set. If other marker set is required, it is necessary to adapt the script and model files accordingly. 
    3. **Joe Doe** is intended for hybrid example (https://github.com/qualisys/paf-theia-markerless-true-hybrid-example). It does not include videos and can be used as an example how to add objects to markeless analysis. Objects must have markers on. It is important that both marker cameras and video camera capture at the same rate.

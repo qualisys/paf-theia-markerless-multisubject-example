@@ -1,11 +1,3 @@
-!====================================================
-! Load report template
-! Note: template includes joint angle definitions 
-!====================================================
-
-Open_Report_Template
-/REPORT_TEMPLATE=report.rgt
-;
 
 Recalc
 ;

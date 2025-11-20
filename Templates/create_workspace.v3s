@@ -38,46 +38,37 @@ Set_Pipeline_Parameter
 !=============================
 !Open files
 !=============================
-Manage_File_Merge
-/ROOT_FOLDER=<?=$working_directory;?>TheiaFormatData\
-! /HMX_INDEX_MASK=
-! /USE_HMX_INDEX=FALSE
-! /ACTION=
-! /TAGS=ACTION
-! /IMPORT_ANALOG_FILES=FALSE
-/MERGE_PRIMARY_FILES=TRUE
-! /MERGE_PRIMARY_AND_OTHER_FILES=FALSE
-! /MERGE_EVENT_LABELS=FALSE
-/PRIMARY_SESSION_FOLDER=*TheiaFormatData
-/PRIMARY_FILE_MASK=*0.c3d
-! /PRIMARY_FILE_MAS_FOR_MODEL=
-/THEIA3D_PREFIX=SUBJECT0:
-/THEIA3D_SUBJECT_TAG=SUBJECT0
-/PRIMARY_COLOR=Black
-! /PRIMARY_SEX=UNKNOWN
-! /CREATE_MODEL_FOR_EACH_C3D_FILE=FALSE
-/OTHER_SESSION_FOLDER=*TheiaFormatData
-/OTHER_FILE_MASK=*.c3d
-! /OTHER_MODEL_MASK=
-! /OTHER_MODEL_TEMPLATE_MASK=
-/OTHER_PREFIX=SUBJECT1:
-/OTHER_SUBJECT_TAG=SUBJECT1
-/OTHER_COLOR=Black
-! /NUMBER_OF_SESSION_FILES_ALLOWED=
-/SAVE_DEFAULT_CMZ_FILES=FALSE
-! /DEFAULT_CMZ_NAME=<SESSION>
-! /OPEN_CMZ_LIBRARY=FALSE
-! /VIRTUAL_LAB=
-/INPUT_DATA_FOLDER_PRIMARY=ACTION
-/INPUT_DATA_FOLDER_SECONDARY=ACTION
-/INPUT_STATIC_DATA_FOLDER=TRIAL
-! /KINETIC_THORAX=RTA
-! /ANALOG_FILTER_CUTOFF=12
-! /TARGET_FILTER_CUTOFF=12
-/FP_AUTO_BASELINE=Do_Not_Compute
-! /VISUAL3D_PIPELINE_POST_MERGE=
-! /VISUAL3D_PIPELINE_PREMERGE=
-;
+<?
+// Load movement files and add tags.
+foreach($measurements as $m) {
+	if(strstr($m["Used"], "True") && strpos($m['Measurement_type'], 'Dynamic') !== false) {
+		$path_parts 	= pathinfo($m["Filename"]);
+		//print_r($path_parts);
+?> 
+
+		File_Open
+		/FILE_NAME=pose_filt.c3d
+		/FILE_PATH=<?=$working_directory;?>TheiaFormatData\<?=$path_parts['filename'];?>
+		/SEARCH_SUBFOLDERS=FALSE
+		! /SUFFIX=
+		/SET_PROMPT=Open pose_filt.c3d
+		! /ON_FILE_NOT_FOUND=PROMPT
+		/FILE_TYPES_ON_PROMPT=c3d
+		;
+
+		! Rename file to get unique name
+		File_Rename
+		/EXISTING_FILE_NAME=<?=$working_directory;?>TheiaFormatData\<?=$path_parts['filename'];?>\pose_filt.c3d
+		/NEW_FILE_NAME=<?=$path_parts['filename'];?> 
+		/USE_SEARCH_REPLACE=TRUE
+		/SEARCH_FOR=pose_filt.c3d
+		/REPLACE_WITH=<?=$path_parts['filename'];?> 
+		! /REMOVE_FILE_PATH=FALSE
+		/RENAME_STATIC_CALIBRATION_FILES=FALSE
+		;
+
+<?	}
+}?> 
 
 ! Add tags
 Assign_Tags_To_Files
@@ -88,14 +79,14 @@ Assign_Tags_To_Files
 
 Set_Subject_Tag
 /CALIBRATION_FILE=*SUBJECT0*
-/SUBJECT_PREFIX=SUBJECT0:
+/SUBJECT_PREFIX=SUBJECT0FILT:
 /SUBJECT_TAGS=SUBJECT0
 ! /REMOVE_EXISTING_TAGS=FALSE
 ;
 
 Set_Subject_Tag
 /CALIBRATION_FILE=*SUBJECT1*
-/SUBJECT_PREFIX=SUBJECT1:
+/SUBJECT_PREFIX=SUBJECT1FILT:
 /SUBJECT_TAGS=SUBJECT1
 ! /REMOVE_EXISTING_TAGS=FALSE
 ;
@@ -124,7 +115,7 @@ Set_Subject_Height
 
 Append_Model_Template
 /CALIBRATION_FILE=*SUBJECT0*
-/SUBJECT_PREFIX=SUBJECT0:
+/SUBJECT_PREFIX=SUBJECT0FILT:
 /MODEL_TEMPLATE=<?=$template_directory;?>append_model.mdh
 ! /VIEW_BUILDMODEL_RESULTS=2
 ;
@@ -153,7 +144,7 @@ Set_Subject_Height
 
 Append_Model_Template
 /CALIBRATION_FILE=*SUBJECT1*
-/SUBJECT_PREFIX=SUBJECT1:
+/SUBJECT_PREFIX=SUBJECT1FILT:
 /MODEL_TEMPLATE=<?=$template_directory;?>append_model.mdh
 ! /VIEW_BUILDMODEL_RESULTS=2
 ;
@@ -237,6 +228,11 @@ Create_Target
 
 ! End of virtual lab definition 
 ! =========================================
+
+!====================================================
+! Load report template
+! Note: template includes joint angle definitions 
+!====================================================
 
 Open_Report_Template
 /REPORT_TEMPLATE=<?=$template_directory;?>report.rgt

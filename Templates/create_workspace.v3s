@@ -38,6 +38,7 @@ Set_Pipeline_Parameter
 !=============================
 !Open files
 !=============================
+
 <?
 // Load movement files and add tags.
 foreach($measurements as $m) {
@@ -46,14 +47,120 @@ foreach($measurements as $m) {
 		//print_r($path_parts);
 ?> 
 
+		Set_Pipeline_Parameter
+		/PARAMETER_NAME=qtm_file
+		/PARAMETER_VALUE=<?=$working_directory . $path_parts['filename'] . ".c3d";?> 
+		!/PARAMETER_VALUE_SEARCH_FOR=_Theia.c3d
+		!/PARAMETER_VALUE_REPLACE_WITH=.c3d
+		! /PARAMETER_VALUE_PREFIX=
+		! /PARAMETER_VALUE_APPEND=
+		! /MULTI_PASS=FALSE
+		;
+
+		Set_Pipeline_Parameter
+		/PARAMETER_NAME=theia_file
+		/PARAMETER_VALUE=<?=$working_directory;?>TheiaFormatData\<?=$path_parts['filename'];?>\pose_filt.c3d
+		!/PARAMETER_VALUE_SEARCH_FOR=_Theia.c3d
+		!/PARAMETER_VALUE_REPLACE_WITH=.c3d
+		! /PARAMETER_VALUE_PREFIX=
+		! /PARAMETER_VALUE_APPEND=
+		! /MULTI_PASS=FALSE
+		;
+
+		! Copy cropping metrics to Theia c3d because that one gets exported for web
 		File_Open
-		/FILE_NAME=pose_filt.c3d
-		/FILE_PATH=<?=$working_directory;?>TheiaFormatData\<?=$path_parts['filename'];?>
-		/SEARCH_SUBFOLDERS=FALSE
-		! /SUFFIX=
-		/SET_PROMPT=Open pose_filt.c3d
-		! /ON_FILE_NOT_FOUND=PROMPT
-		/FILE_TYPES_ON_PROMPT=c3d
+		/FILE_NAME=::qtm_file
+		;
+
+		Select_Active_File
+		/FILE_NAME=::qtm_file
+		!/QUERY=
+		;
+
+		Metric_Explicit
+		! /RESULT_METRIC_FOLDER=PROCESSED
+		/RESULT_METRIC_NAME=GLOBAL::Cropped Measurement Start Frame_qtm
+		/METRIC_VALUE=PARAMETERS::PROCESSING::Cropped Measurement Start Frame
+		;
+
+		Metric_Explicit
+		! /RESULT_METRIC_FOLDER=PROCESSED
+		/RESULT_METRIC_NAME=GLOBAL::Cropped Measurement End Frame_qtm
+		/METRIC_VALUE=PARAMETERS::PROCESSING::Cropped Measurement End Frame
+		;
+
+		Metric_Explicit
+		! /RESULT_METRIC_FOLDER=PROCESSED
+		/RESULT_METRIC_NAME=GLOBAL::frame_rate_qtm
+		/METRIC_VALUE=PARAMETERS::POINT::RATE
+		;
+
+		Set_Pipeline_Parameter_To_Data_Value
+		/SIGNAL_TYPES=PARAMETERS
+		/SIGNAL_FOLDER=ANALOG
+		/SIGNAL_NAMES=RATE
+		! /SIGNAL_COMPONENTS=ALL_COMPONENTS
+		/PARAMETER_NAME=analog_rate_qtm
+		;
+
+		!Make copy of all manually entered events and store them in GLOBAL
+		Set_Pipeline_Parameter_To_List_Of_Signal_Names
+		/PARAMETER_NAME=ev
+		/SIGNAL_TYPES=EVENT_LABEL
+		/SIGNAL_FOLDER=ORIGINAL
+		;
+
+		For_Each
+		/ITERATION_PARAMETER_NAME=ev_name
+		! /ITERATION_PARAMETER_COUNT_NAME=
+		/ITEMS=::ev
+		;
+
+			Evaluate_Expression
+			/EXPRESSION=EVENT_LABEL::ORIGINAL::&::ev_name&
+			/RESULT_TYPES=METRIC
+			/RESULT_FOLDERS=EVENTS
+			/RESULT_NAME=GLOBAL::&::ev_name&
+			! /APPLY_AS_SUFFIX_TO_SIGNAL_NAME=FALSE
+			;
+
+		End_For_Each
+		/ITERATION_PARAMETER_NAME=ev_name
+		;
+
+		File_Close
+		/FILE_NAME=::qtm_file
+		! /QUERY=
+		;
+
+		File_Open
+		/FILE_NAME=::theia_file
+		;
+
+		Set_Pipeline_Parameter_From_Expression
+		/PARAMETER_NAME=analog_to_point_ratio
+		/EXPRESSION=&::analog_rate_qtm& / PARAMETERS::POINT::RATE
+		! /AS_INTEGER=TRUE
+		;
+
+		! import analog signals captured by QTM into Theia generated c3d
+		Import_Signals_From_C3D_File
+		/FILE_NAME=::theia_file
+		/IMPORT_FILE_NAME=::qtm_file
+		! /FILE_NAME=::theia_file
+		! /IMPORT_FILE_NAME=::qtm_file
+		/REPLACE_EXISTING_SIGNALS=TRUE
+		! /SYNCH_OFFSET=
+		! /IMPORT_ANALOG_SYNCH=
+		! /IMPORT_ANALOG_THRESHOLD=0.0
+		! /IMPORT_ANALOG_ASCENDING=TRUE
+		! /ANALOG_RATE=
+		/ANALOG_RATIO=::analog_to_point_ratio
+		! /UPSAMPLE_TO_EXISTING_RATE=FALSE
+		! /INTERPOLATION_METHOD=CUBIC_SPLINE
+		! /IMPORT_AS_DERIVED=FALSE
+		! /DERIVED_FOLDER=EMG
+		/IMPORT_FORCE_PLATFORM_PARAMETERS=TRUE
 		;
 
 		! Rename file to get unique name
@@ -77,6 +184,7 @@ Assign_Tags_To_Files
 /TAGS=Dynamic
 ;
 
+! Add a tag for each subject
 Set_Subject_Tag
 /CALIBRATION_FILE=*SUBJECT0*
 /SUBJECT_PREFIX=SUBJECT0FILT:
@@ -91,6 +199,16 @@ Set_Subject_Tag
 ! /REMOVE_EXISTING_TAGS=FALSE
 ;
 
+! Set_Subject_Tag
+! /CALIBRATION_FILE=*SUBJECT2*
+! /SUBJECT_PREFIX=SUBJECT2FILT:
+! /SUBJECT_TAGS=SUBJECT2
+! ! /REMOVE_EXISTING_TAGS=FALSE
+! ;
+
+! Add body mass and height for each subject
+
+! Subject 0
 Select_Active_File
 /FILE_NAME=*Dynamic 1*
 ! /QUERY=
@@ -120,6 +238,7 @@ Append_Model_Template
 ! /VIEW_BUILDMODEL_RESULTS=2
 ;
 
+! Subject 1
 Select_Active_File
 /FILE_NAME=*Dynamic 2*
 ! /QUERY=
@@ -148,6 +267,36 @@ Append_Model_Template
 /MODEL_TEMPLATE=<?=$template_directory;?>append_model.mdh
 ! /VIEW_BUILDMODEL_RESULTS=2
 ;
+
+! ! Subject 2
+! Select_Active_File
+! /FILE_NAME=*Dynamic 3*
+! ! /QUERY=
+! /SUBJECT_TAGS=SUBJECT2
+! ;
+
+! Set_Subject_Mass
+! /CALIBRATION_FILE=*SUBJECT2*
+! ! /PROMPT=
+! ! /PROMPT_SIZE=90
+! /WEIGHT=<?=$session["Weight"]?> 
+! ! /UNITS=Kg
+! ;
+
+! Set_Subject_Height
+! /CALIBRATION_FILE=*SUBJECT2*
+! ! /PROMPT=
+! ! /PROMPT_SIZE=90
+! /HEIGHT=<?=$subject["Height"]?> 
+! ! /UNITS=m
+! ;
+
+! Append_Model_Template
+! /CALIBRATION_FILE=*SUBJECT2*
+! /SUBJECT_PREFIX=SUBJECT1FILT:
+! /MODEL_TEMPLATE=<?=$template_directory;?>append_model.mdh
+! ! /VIEW_BUILDMODEL_RESULTS=2
+! ;
 
 Build_Model
 ! /CALIBRATION_FILE=

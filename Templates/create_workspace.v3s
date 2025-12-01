@@ -360,6 +360,11 @@ Recalc
 !====================================================
 ! Export LINK_MODEL_BASED signals to .xml
 !====================================================
+Select_Active_File
+/FILE_NAME=ALL_FILES
+! /QUERY=
+/SUBJECT_TAGS=ALL_SUBJECTS
+;
 
 Export_Data_To_Ascii_File
 /FILE_NAME=<?=$working_directory;?>session_data.xml

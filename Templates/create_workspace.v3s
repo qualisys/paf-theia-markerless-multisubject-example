@@ -184,119 +184,76 @@ Assign_Tags_To_Files
 /TAGS=Dynamic
 ;
 
-! Add a tag for each subject
-Set_Subject_Tag
-/CALIBRATION_FILE=*SUBJECT0*
-/SUBJECT_PREFIX=SUBJECT0FILT:
-/SUBJECT_TAGS=SUBJECT0
-! /REMOVE_EXISTING_TAGS=FALSE
-;
-
-Set_Subject_Tag
-/CALIBRATION_FILE=*SUBJECT1*
-/SUBJECT_PREFIX=SUBJECT1FILT:
-/SUBJECT_TAGS=SUBJECT1
-! /REMOVE_EXISTING_TAGS=FALSE
-;
-
-! Set_Subject_Tag
-! /CALIBRATION_FILE=*SUBJECT2*
-! /SUBJECT_PREFIX=SUBJECT2FILT:
-! /SUBJECT_TAGS=SUBJECT2
-! ! /REMOVE_EXISTING_TAGS=FALSE
-! ;
-
-! Add body mass and height for each subject
-
-! Subject 0
+! Add a tag for each subject and apply model
 Select_Active_File
 /FILE_NAME=*Dynamic 1*
 ! /QUERY=
-/SUBJECT_TAGS=SUBJECT0
+! /SUBJECT_TAGS=SUBJECT0
 ;
 
-Set_Subject_Mass
-/CALIBRATION_FILE=*SUBJECT0*
-! /PROMPT=
-! /PROMPT_SIZE=90
-/WEIGHT=<?=$session["Weight"]?> 
-! /UNITS=Kg
+Set_Pipeline_Parameter_To_Data_Value
+/SIGNAL_TYPES=PARAMETERS
+/SIGNAL_FOLDER=SUBJECTS
+/SIGNAL_NAMES=USED
+! /SIGNAL_COMPONENTS=ALL_COMPONENTS
+/PARAMETER_NAME=subjects_count
 ;
 
-Set_Subject_Height
-/CALIBRATION_FILE=*SUBJECT0*
-! /PROMPT=
-! /PROMPT_SIZE=90
-/HEIGHT=<?=$subject["Height"]?> 
-! /UNITS=m
+Set_Pipeline_Parameter_From_For_Loop
+/PARAMETER_NAME=subject_no
+/PARAMETER_INDEX_START=0
+/PARAMETER_INDEX_END=&::subjects_count& - 1
+/PARAMETER_INDEX_STEP=1
+! /PARAMETER_INDEX_TYPE=INTEGER
 ;
 
-Append_Model_Template
-/CALIBRATION_FILE=*SUBJECT0*
-/SUBJECT_PREFIX=SUBJECT0FILT:
-/MODEL_TEMPLATE=<?=$template_directory;?>append_model.mdh
-! /VIEW_BUILDMODEL_RESULTS=2
+For_Each
+/ITERATION_PARAMETER_NAME=my_subject_no
+! /ITERATION_PARAMETER_COUNT_NAME=
+! /ITERATION_PARAMETER_COUNT_BUFFER=
+/ITEMS=::subject_no
 ;
 
-! Subject 1
-Select_Active_File
-/FILE_NAME=*Dynamic 2*
-! /QUERY=
-/SUBJECT_TAGS=SUBJECT1
+	Set_Subject_Tag
+	/CALIBRATION_FILE=*SUBJECT&::my_subject_no&*
+	/SUBJECT_PREFIX=SUBJECT&::my_subject_no&FILT:
+	/SUBJECT_TAGS=SUBJECT&::my_subject_no&
+	! /REMOVE_EXISTING_TAGS=FALSE
+	;
+
+	Select_Active_File
+	/FILE_NAME=*Dynamic 1*
+	! /QUERY=
+	/SUBJECT_TAGS=SUBJECT&::my_subject_no&
+	;
+
+	! Add body mass and height for each subject
+	! Set_Subject_Mass
+	! /CALIBRATION_FILE=*SUBJECT&::my_subject_no&*
+	! ! /PROMPT=
+	! ! /PROMPT_SIZE=90
+	! /WEIGHT=<?=$session["Weight"]?> 
+	! ! /UNITS=Kg
+	! ;
+
+	! Set_Subject_Height
+	! /CALIBRATION_FILE=*SUBJECT&::my_subject_no&*
+	! ! /PROMPT=
+	! ! /PROMPT_SIZE=90
+	! /HEIGHT=<?=$subject["Height"]?> 
+	! ! /UNITS=m
+	! ;
+
+	Append_Model_Template
+	/CALIBRATION_FILE=*SUBJECT&::my_subject_no&*
+	/SUBJECT_PREFIX=SUBJECT&::my_subject_no&FILT:
+	/MODEL_TEMPLATE=<?=$template_directory;?>append_model.mdh
+	! /VIEW_BUILDMODEL_RESULTS=2
+	;
+
+End_For_Each
+/ITERATION_PARAMETER_NAME=my_subject_no
 ;
-
-Set_Subject_Mass
-/CALIBRATION_FILE=*SUBJECT1*
-! /PROMPT=
-! /PROMPT_SIZE=90
-/WEIGHT=<?=$session["Weight"]?> 
-! /UNITS=Kg
-;
-
-Set_Subject_Height
-/CALIBRATION_FILE=*SUBJECT1*
-! /PROMPT=
-! /PROMPT_SIZE=90
-/HEIGHT=<?=$subject["Height"]?> 
-! /UNITS=m
-;
-
-Append_Model_Template
-/CALIBRATION_FILE=*SUBJECT1*
-/SUBJECT_PREFIX=SUBJECT1FILT:
-/MODEL_TEMPLATE=<?=$template_directory;?>append_model.mdh
-! /VIEW_BUILDMODEL_RESULTS=2
-;
-
-! ! Subject 2
-! Select_Active_File
-! /FILE_NAME=*Dynamic 3*
-! ! /QUERY=
-! /SUBJECT_TAGS=SUBJECT2
-! ;
-
-! Set_Subject_Mass
-! /CALIBRATION_FILE=*SUBJECT2*
-! ! /PROMPT=
-! ! /PROMPT_SIZE=90
-! /WEIGHT=<?=$session["Weight"]?> 
-! ! /UNITS=Kg
-! ;
-
-! Set_Subject_Height
-! /CALIBRATION_FILE=*SUBJECT2*
-! ! /PROMPT=
-! ! /PROMPT_SIZE=90
-! /HEIGHT=<?=$subject["Height"]?> 
-! ! /UNITS=m
-! ;
-
-! Append_Model_Template
-! /CALIBRATION_FILE=*SUBJECT2*
-! /SUBJECT_PREFIX=SUBJECT1FILT:
-! /MODEL_TEMPLATE=<?=$template_directory;?>append_model.mdh
-! ! /VIEW_BUILDMODEL_RESULTS=2
-! ;
 
 Build_Model
 ! /CALIBRATION_FILE=

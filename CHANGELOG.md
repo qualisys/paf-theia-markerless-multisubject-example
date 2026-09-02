@@ -1,7 +1,7 @@
 # Changelog
 
 ## [1.0.3]
-- Tested with QTM 2026.2 (build 16751), Theia3D 2026.1.4 and Visual3D 2026.01.3.
+- Tested with QTM 2026.2 (build 17495), Theia3D 2026.1.4 and Visual3D 2026.01.3.
 
 ## [1.0.2]
 - Tested with QTM 2026.1 (build 16751), Theia3D 2025.2.0 and Visual3D 2026.01.3.
